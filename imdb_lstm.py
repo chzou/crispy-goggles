@@ -22,13 +22,56 @@ from keras.layers import Dense, Embedding
 from keras.layers import LSTM
 from keras.datasets import imdb
 
+from keras.models import model_from_json
+import h5py
+import numpy as np
+
+
+#[Erik] added for some weird bug on my computer. 
+import os
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
+
+def save_model(model, filename = 'model'):
+	model_json = model.to_json()
+	with open("{}.json".format(filename), "w") as json_file:
+	    json_file.write(model_json)
+	# serialize weights to HDF5
+	model.save_weights("{}.h5".format(filename))
+	print("Saved model to disk")
+
+def load_model(filename = 'model'):
+	# load json and create model
+	json_file = open('{}.json'.format(filename), 'r')
+	loaded_model_json = json_file.read()
+	json_file.close()
+	loaded_model = model_from_json(loaded_model_json)
+	# load weights into new model
+	loaded_model.load_weights("{}.h5".format(filename))
+	print("Loaded model from disk")
+	return loaded_model
+
+def convert_to_toy(data, labels, frac = 0.01):
+	current_size = data.shape[0]
+	indices = np.random.choice(current_size, size = int(current_size * frac))
+	toy_data = data[indices]
+	toy_labels = labels[indices]
+	return toy_data, toy_labels
+
+
 max_features = 20000
 # cut texts after this number of words (among top max_features most common words)
 maxlen = 80
 batch_size = 32
+num_epochs = 1
+toy = True
 
 print('Loading data...')
 (x_train, y_train), (x_test, y_test) = imdb.load_data(num_words=max_features)
+
+if toy:
+	x_train, y_train = convert_to_toy(x_train, y_train)
+	x_test, y_test = convert_to_toy(x_test, y_test)
+
 print(len(x_train), 'train sequences')
 print(len(x_test), 'test sequences')
 
@@ -52,9 +95,17 @@ model.compile(loss='binary_crossentropy',
 print('Train...')
 model.fit(x_train, y_train,
           batch_size=batch_size,
-          epochs=15,
+          epochs=num_epochs,
           validation_data=(x_test, y_test))
 score, acc = model.evaluate(x_test, y_test,
                             batch_size=batch_size)
 print('Test score:', score)
 print('Test accuracy:', acc)
+
+save_model(model)
+loaded_model = load_model()
+
+# evaluate loaded model on test data
+loaded_model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+score = loaded_model.evaluate(x_test, y_test, verbose=0)
+print("%s: %.2f%%" % (loaded_model.metrics_names[1], score[1]*100))
