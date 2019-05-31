@@ -23,9 +23,11 @@ from keras.layers import LSTM
 from keras.datasets import imdb
 
 from keras.models import model_from_json
-from utils import save_model, load_model, convert_to_toy
+from utils import save_model, load_model, convert_to_toy, train_test_split
 import h5py
 import numpy as np
+
+from create_model_dataset import load_dataset
 
 
 #[Erik] added for some weird bug on my computer. 
@@ -40,21 +42,33 @@ batch_size = 32
 num_epochs = 1
 toy = True
 
-print('Loading data...')
-(x_train, y_train), (x_test, y_test) = imdb.load_data(num_words=max_features)
+mimic = True
+if mimic:
+	print("Loading for mimic model")
+	subset_size = 10 #REPLACE WITH WHAT IT ACTUALLY IS
+	data, labels = load_dataset(subset_size)
+	(x_train, y_train), (x_test, y_test) = train_test_split(data, labels, test_frac  = 0.2)
 
-if toy:
-	x_train, y_train = convert_to_toy(x_train, labels = y_train)
-	x_test, y_test = convert_to_toy(x_test, labels = y_test)
+else:
 
-print(len(x_train), 'train sequences')
-print(len(x_test), 'test sequences')
+	print('Loading data from imdb...')
+	(x_train, y_train), (x_test, y_test) = imdb.load_data(num_words=max_features)
 
-print('Pad sequences (samples x time)')
-x_train = sequence.pad_sequences(x_train, maxlen=maxlen)
-x_test = sequence.pad_sequences(x_test, maxlen=maxlen)
-print('x_train shape:', x_train.shape)
-print('x_test shape:', x_test.shape)
+	if toy:
+		print("Using toy...")
+		x_train, y_train = convert_to_toy(x_train, labels = y_train)
+		x_test, y_test = convert_to_toy(x_test, labels = y_test)
+
+	print(len(x_train), 'train sequences')
+	print(len(x_test), 'test sequences')
+
+	print('Pad sequences (samples x time)')
+	x_train = sequence.pad_sequences(x_train, maxlen=maxlen)
+	x_test = sequence.pad_sequences(x_test, maxlen=maxlen)
+	print('x_train shape:', x_train.shape)
+	print('x_test shape:', x_test.shape)
+
+#IF should used saved data. In this case, we're building the mimic model
 
 print('Build model...')
 model = Sequential()

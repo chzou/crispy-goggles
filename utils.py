@@ -2,6 +2,7 @@ from keras.models import model_from_json
 import h5py
 import numpy as np
 import pickle
+from sklearn import model_selection
 
 def save_model(model, filename = 'model'):
 	model_json = model.to_json()
@@ -19,6 +20,12 @@ def pickle_load(filename):
 	with open(filename, 'rb') as f:
 		obj = pickle.load(f)
 		return obj
+
+#Gotta love this style... test_size = test_frac
+def train_test_split(data, labels, test_frac = 0.5):
+	train_data, test_data, train_labels, test_labels = model_selection.train_test_split(data, labels, test_size = test_frac)
+	print(train_data.shape, train_labels.shape, test_data.shape, test_labels.shape)
+	return (train_data, train_labels), (test_data, test_labels)
 
 def load_model(filename = 'model'):
 	# load json and create model
