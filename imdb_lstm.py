@@ -27,7 +27,8 @@ from utils import save_model, load_model, convert_to_toy, train_test_split
 import h5py
 import numpy as np
 
-from create_model_dataset import load_dataset
+# UNCOMMENT FOR MIMIC
+#from create_model_dataset import load_dataset
 
 
 #[Erik] added for some weird bug on my computer. 
@@ -35,18 +36,20 @@ import os
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 
-max_features = 20000
+max_features = 10000
 # cut texts after this number of words (among top max_features most common words)
-maxlen = 80
+maxlen = 250
 batch_size = 32
-num_epochs = 1
-toy = True
+num_epochs = 10
+toy = False
 
-mimic = True
+mimic = False
 if mimic:
 	print("Loading for mimic model")
 	subset_size = 10 #REPLACE WITH WHAT IT ACTUALLY IS
-	data, labels = load_dataset(subset_size)
+	data, labels = None, None
+        # UNCOMMENT FOR MIMIC
+        #data, labels = load_dataset(subset_size)
 	(x_train, y_train), (x_test, y_test) = train_test_split(data, labels, test_frac  = 0.2)
 
 else:
@@ -63,8 +66,8 @@ else:
 	print(len(x_test), 'test sequences')
 
 	print('Pad sequences (samples x time)')
-	x_train = sequence.pad_sequences(x_train, maxlen=maxlen)
-	x_test = sequence.pad_sequences(x_test, maxlen=maxlen)
+	x_train = sequence.pad_sequences(x_train, maxlen=maxlen, padding='post')
+	x_test = sequence.pad_sequences(x_test, maxlen=maxlen, padding='post')
 	print('x_train shape:', x_train.shape)
 	print('x_test shape:', x_test.shape)
 
@@ -91,10 +94,11 @@ score, acc = model.evaluate(x_test, y_test,
 print('Test score:', score)
 print('Test accuracy:', acc)
 
-save_model(model)
-loaded_model = load_model()
+print("Saving model...")
+save_model(model, filename = 'trained_model')
+#loaded_model = load_model()
 
 # evaluate loaded model on test data
-loaded_model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
-score = loaded_model.evaluate(x_test, y_test, verbose=0)
-print("%s: %.2f%%" % (loaded_model.metrics_names[1], score[1]*100))
+#loaded_model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+#score = loaded_model.evaluate(x_test, y_test, verbose=0)
+#print("%s: %.2f%%" % (loaded_model.metrics_names[1], score[1]*100))
